@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DEBIL BOOS - Media & Ad Downloader</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { red: '#FF2A4B', darkRed: '#D61A37', darkBg: '#0F0F12', cardBg: '#18181C', cardHover: '#222228' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #0F0F12; color: #E2E8F0; font-family: system-ui, -apple-system, sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #0F0F12; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #2A2A35; border-radius: 3px; }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+  <!-- MAINTENANCE SCREEN -->
+  <div id="maintenanceScreen" class="fixed inset-0 bg-[#0F0F12] z-50 flex flex-col items-center justify-center p-6 text-center hidden">
+    <div class="bg-brand-cardBg border border-gray-800 p-8 rounded-3xl max-w-md shadow-2xl space-y-4">
+      <i class="fa-solid fa-gears text-6xl text-brand-red animate-spin"></i>
+      <h2 class="text-2xl font-black text-white">ওয়েবসাইট সাময়িকভাবে বন্ধ আছে</h2>
+      <p class="text-sm text-gray-400">আমরা ওয়েবসাইটের কিছু প্রয়োজনীয় রক্ষণাবেক্ষণ বা আপডেট করছি। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।</p>
+    </div>
+  </div>
+
+  <!-- AUTH MODAL (LOGIN & SIGNUP) -->
+  <div id="authModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-brand-cardBg border border-gray-800 p-6 sm:p-8 rounded-3xl w-full max-w-md shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <!-- LOGIN FORM -->
+      <div id="loginFormContainer">
+        <h3 class="text-2xl font-black text-white text-center mb-1">লগইন করুন</h3>
+        <p class="text-xs text-gray-400 text-center mb-6">আপনার অ্যাকাউন্টে প্রবেশ করতে তথ্য দিন</p>
+        <form onsubmit="handleUserLogin(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">ইমেইল</label>
+            <input type="email" id="loginEmail" required placeholder="example@gmail.com" 
+                   class="w-full bg-black/50 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-red">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">পাসওয়ার্ড</label>
+            <input type="password" id="loginPassword" required placeholder="******" 
+                   class="w-full bg-black/50 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-red">
+          </div>
+          <p id="loginErrorMsg" class="text-xs text-red-500 hidden text-center"></p>
+          <button type="submit" class="w-full bg-brand-red hover:bg-brand-darkRed text-white py-3 rounded-xl text-sm font-bold shadow-lg transition">
+            লগইন করুন
+          </button>
+        </form>
+        <p class="text-xs text-gray-400 text-center mt-4">
+          অ্যাকাউন্ট নেই? <button onclick="switchAuthTab('signup')" class="text-brand-red font-bold hover:underline">নতুন অ্যাকাউন্ট খুলুন</button>
+        </p>
+      </div>
+
+      <!-- SIGNUP FORM -->
+      <div id="signupFormContainer" class="hidden">
+        <h3 class="text-2xl font-black text-white text-center mb-1">অ্যাকাউন্ট খুলুন</h3>
+        <p class="text-xs text-gray-400 text-center mb-6">আপনার প্রোফাইল ছবিসহ তথ্যগুলো পূরণ করুন</p>
+        <form onsubmit="handleUserSignup(event)" class="space-y-4">
+          
+          <!-- Profile Pic Preview & Input -->
+          <div class="flex flex-col items-center justify-center space-y-2">
+            <div class="relative w-20 h-20 rounded-full bg-black/60 border-2 border-brand-red overflow-hidden flex items-center justify-center group">
+              <img id="signupAvatarPreview" src="" class="w-full h-full object-cover hidden">
+              <i id="signupAvatarIcon" class="fa-solid fa-user text-3xl text-gray-500"></i>
+            </div>
+            <label class="cursor-pointer bg-gray-800 hover:bg-gray-700 text-white text-xs px-3 py-1.5 rounded-lg border border-gray-700 font-semibold transition">
+              <i class="fa-solid fa-camera mr-1"></i> ছবি সিলেক্ট করুন
+              <input type="file" id="signupAvatarInput" accept="image/*" onchange="previewSignupAvatar(event)" class="hidden">
+            </label>
+          </div>
+
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">আপনার নাম</label>
+            <input type="text" id="signupName" required placeholder="যেমন: DEBIL BOos" 
+                   class="w-full bg-black/50 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-red">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">ইমেইল</label>
+            <input type="email" id="signupEmail" required placeholder="example@gmail.com" 
+                   class="w-full bg-black/50 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-red">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">পাসওয়ার্ড</label>
+            <input type="password" id="signupPassword" minlength="6" required placeholder="কমপক্ষে ৬ ডিজিট" 
+                   class="w-full bg-black/50 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-red">
+          </div>
+          <p id="signupErrorMsg" class="text-xs text-red-500 hidden text-center"></p>
+          <button type="submit" id="signupBtn" class="w-full bg-brand-red hover:bg-brand-darkRed text-white py-3 rounded-xl text-sm font-bold shadow-lg transition">
+            রেজিস্ট্রেশন করুন
+          </button>
+        </form>
+        <p class="text-xs text-gray-400 text-center mt-4">
+          আগে থেকেই অ্যাকাউন্ট আছে? <button onclick="switchAuthTab('login')" class="text-brand-red font-bold hover:underline">লগইন করুন</button>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MAIN WEBSITE CONTENT -->
+  <div id="mainContent" class="flex flex-col flex-1">
+    <!-- Header -->
+    <header class="bg-brand-cardBg sticky top-0 z-40 border-b border-gray-800 shadow-md">
+      <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="location.reload()">
+          <div class="bg-brand-red text-white p-2 rounded-xl flex items-center justify-center font-black text-xl shadow-lg">
+            <i class="fa-solid fa-play text-white"></i>
+          </div>
+          <span class="font-extrabold text-xl sm:text-2xl tracking-wider text-white hidden sm:inline">
+            DEBIL <span class="text-brand-red">BOOS</span>
+          </span>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="flex flex-1 max-w-md mx-2">
+          <div class="relative w-full">
+            <input type="text" id="searchInput" oninput="handleSearch()" placeholder="সার্চ করুন..." 
+                   class="w-full bg-black/40 border border-gray-700 rounded-full py-2 pl-4 pr-10 text-xs sm:text-sm focus:outline-none focus:border-brand-red text-white">
+            <button class="absolute right-3 top-2.5 text-gray-400 hover:text-brand-red">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- User Profile Bar -->
+        <div id="userProfileArea" class="flex items-center gap-2">
+          <!-- Dynamically populated JS -->
+        </div>
+      </div>
+    </header>
+
+    <!-- Categories -->
+    <nav class="bg-black/30 border-b border-gray-800/80 sticky top-16 z-30 backdrop-blur-md">
+      <div class="max-w-7xl mx-auto px-4">
+        <div class="flex gap-2 py-3 overflow-x-auto custom-scrollbar text-sm font-medium">
+          <button onclick="filterCategory('All')" class="cat-btn bg-brand-red text-white px-4 py-1.5 rounded-full whitespace-nowrap">All</button>
+          <button onclick="filterCategory('Trending')" class="cat-btn bg-brand-cardBg hover:bg-gray-800 text-gray-300 px-4 py-1.5 rounded-full whitespace-nowrap">Trending</button>
+          <button onclick="filterCategory('Movies')" class="cat-btn bg-brand-cardBg hover:bg-gray-800 text-gray-300 px-4 py-1.5 rounded-full whitespace-nowrap">Movies</button>
+          <button onclick="filterCategory('Music')" class="cat-btn bg-brand-cardBg hover:bg-gray-800 text-gray-300 px-4 py-1.5 rounded-full whitespace-nowrap">Music</button>
+          <button onclick="filterCategory('Photos')" class="cat-btn bg-brand-cardBg hover:bg-gray-800 text-gray-300 px-4 py-1.5 rounded-full whitespace-nowrap">Photos</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Grid -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-bold text-white flex items-center gap-2" id="sectionTitle">
+          <i class="fa-solid fa-fire text-brand-red"></i> Uploaded Photos & Videos
+        </h2>
+        <span class="text-xs text-gray-400">Total Items: <span id="totalCount" class="text-brand-red font-bold">0</span></span>
+      </div>
+
+      <div id="mediaGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+    </main>
+  </div>
+
+  <!-- PLAYER / VIEWER MODAL -->
+  <div id="mediaModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center hidden p-2 sm:p-4">
+    <div class="bg-brand-cardBg border border-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl relative flex flex-col">
+      <div class="p-4 border-b border-gray-800 flex justify-between items-center sticky top-0 bg-brand-cardBg z-10">
+        <h3 id="modalTitle" class="text-base font-bold text-white line-clamp-1"></h3>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Player Area -->
+      <div class="bg-black flex items-center justify-center max-h-[350px] min-h-[200px]">
+        <video id="modalVideoPlayer" controls class="w-full max-h-[350px] hidden"></video>
+        <img id="modalImgPlayer" src="" class="max-h-[350px] w-auto object-contain hidden">
+      </div>
+
+      <!-- Action Bar -->
+      <div class="p-4 border-b border-gray-800 space-y-3">
+        <div class="flex items-center justify-between text-xs text-gray-400">
+          <span class="flex items-center gap-1"><i class="fa-regular fa-eye"></i> <strong id="modalViews" class="text-emerald-400"></strong></span>
+          <span class="flex items-center gap-1"><i class="fa-solid fa-hard-drive"></i> Size: <strong id="modalSize" class="text-white"></strong></span>
+        </div>
+
+        <div class="flex gap-2">
+          <!-- Like Button -->
+          <button id="likeBtn" onclick="toggleLike()" class="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 border border-gray-700 transition">
+            <i class="fa-solid fa-heart text-brand-red" id="heartIcon"></i>
+            <span id="likeCountText">0 Likes</span>
+          </button>
+          
+          <!-- Download Button -->
+          <button onclick="triggerDownloadWithAd()" class="flex-1 bg-brand-red hover:bg-brand-darkRed text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition text-xs sm:text-sm">
+            <i class="fa-solid fa-download"></i> ডাউনলোড করুন
+          </button>
+        </div>
+      </div>
+
+      <!-- Comments Section -->
+      <div class="p-4 space-y-4">
+        <h4 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-regular fa-comments text-brand-red"></i> কমেন্টসমূহ (<span id="commentCount">0</span>)
+        </h4>
+
+        <!-- Add Comment Form -->
+        <div id="commentInputBox"></div>
+
+        <!-- Comments List -->
+        <div id="commentsList" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pt-2"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let tempAvatarData = ""; // Temporary storage for signup avatar
+
+    function trackVisitor() {
+      let currentVisitors = parseInt(localStorage.getItem('debil_site_visitors') || '0');
+      localStorage.setItem('debil_site_visitors', currentVisitors + 1);
+    }
+
+    function checkSiteStatus() {
+      const isOnline = localStorage.getItem('debil_site_active') !== 'false';
+      if (!isOnline) {
+        document.getElementById('maintenanceScreen').classList.remove('hidden');
+        document.getElementById('mainContent').classList.add('hidden');
+      }
+    }
+
+    function getData() {
+      const saved = localStorage.getItem('debil_boos_data');
+      return saved ? JSON.parse(saved) : [];
+    }
+
+    function saveData(data) {
+      localStorage.setItem('debil_boos_data', JSON.stringify(data));
+    }
+
+    function getUsers() {
+      const saved = localStorage.getItem('debil_users');
+      return saved ? JSON.parse(saved) : [];
+    }
+
+    function saveUsers(users) {
+      localStorage.setItem('debil_users', JSON.stringify(users));
+    }
+
+    function getCurrentUser() {
+      const saved = localStorage.getItem('debil_current_user');
+      if (!saved) return null;
+      
+      const user = JSON.parse(saved);
+      const users = getUsers();
+      const updatedUser = users.find(u => u.email === user.email);
+
+      if (updatedUser && updatedUser.isBanned) {
+        alert('আপনার অ্যাকাউন্টটি এডমিন দ্বারা ব্যান করা হয়েছে!');
+        localStorage.removeItem('debil_current_user');
+        return null;
+      }
+
+      return updatedUser || user;
+    }
+
+    function setCurrentUser(user) {
+      if (user) {
+        localStorage.setItem('debil_current_user', JSON.stringify(user));
+      } else {
+        localStorage.removeItem('debil_current_user');
+      }
+    }
+
+    let mediaList = getData();
+    let activeCategory = 'All';
+    let currentActiveItem = null;
+
+    window.onload = () => { 
+      trackVisitor();
+      checkSiteStatus();
+      updateUserUI();
+      renderMedia(); 
+    };
+
+    /* AUTHENTICATION CONTROLLER */
+    function openAuthModal(tab = 'login') {
+      switchAuthTab(tab);
+      document.getElementById('authModal').classList.remove('hidden');
+    }
+
+    function closeAuthModal() {
+      document.getElementById('authModal').classList.add('hidden');
+    }
+
+    function switchAuthTab(tab) {
+      document.getElementById('loginErrorMsg').classList.add('hidden');
+      document.getElementById('signupErrorMsg').classList.add('hidden');
+      if (tab === 'login') {
+        document.getElementById('loginFormContainer').classList.remove('hidden');
+        document.getElementById('signupFormContainer').classList.add('hidden');
+      } else {
+        document.getElementById('loginFormContainer').classList.add('hidden');
+        document.getElementById('signupFormContainer').classList.remove('hidden');
+      }
+    }
+
+    function previewSignupAvatar(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        tempAvatarData = e.target.result;
+        const img = document.getElementById('signupAvatarPreview');
+        const icon = document.getElementById('signupAvatarIcon');
+        img.src = tempAvatarData;
+        img.classList.remove('hidden');
+        icon.classList.add('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleUserSignup(e) {
+      e.preventDefault();
+      const name = document.getElementById('signupName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim().toLowerCase();
+      const password = document.getElementById('signupPassword').value;
+      const errorMsg = document.getElementById('signupErrorMsg');
+
+      let users = getUsers();
+      if (users.some(u => u.email === email)) {
+        errorMsg.innerText = 'এই ইমেইল দিয়ে ইতঃপূর্বে অ্যাকাউন্ট খোলা হয়েছে!';
+        errorMsg.classList.remove('hidden');
+        return;
+      }
+
+      const newUser = { 
+        id: Date.now(), 
+        name, 
+        email, 
+        password, 
+        avatar: tempAvatarData || '', 
+        isBanned: false 
+      };
+
+      users.push(newUser);
+      saveUsers(users);
+      setCurrentUser(newUser);
+
+      closeAuthModal();
+      updateUserUI();
+      e.target.reset();
+      tempAvatarData = "";
+      alert('সফলভাবে অ্যাকাউন্ট তৈরি করা হয়েছে!');
+    }
+
+    function handleUserLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+      const password = document.getElementById('loginPassword').value;
+      const errorMsg = document.getElementById('loginErrorMsg');
+
+      let users = getUsers();
+      let user = users.find(u => u.email === email && u.password === password);
+
+      if (!user) {
+        errorMsg.innerText = 'ইমেইল অথবা পাসওয়ার্ড ভুল!';
+        errorMsg.classList.remove('hidden');
+        return;
+      }
+
+      if (user.isBanned) {
+        errorMsg.innerText = 'আপনার অ্যাকাউন্টটি ব্যান করা হয়েছে!';
+        errorMsg.classList.remove('hidden');
+        return;
+      }
+
+      setCurrentUser(user);
+      closeAuthModal();
+      updateUserUI();
+      e.target.reset();
+    }
+
+    function handleUserLogout() {
+      setCurrentUser(null);
+      updateUserUI();
+    }
+
+    function updateUserUI() {
+      const user = getCurrentUser();
+      const profileArea = document.getElementById('userProfileArea');
+
+      if (user) {
+        const avatarHtml = user.avatar 
+          ? `<img src="${user.avatar}" class="w-6 h-6 rounded-full object-cover border border-brand-red">` 
+          : `<div class="w-6 h-6 rounded-full bg-brand-red text-white flex items-center justify-center text-[10px] font-bold">${user.name.charAt(0).toUpperCase()}</div>`;
+
+        profileArea.innerHTML = `
+          <div class="flex items-center gap-2 bg-black/40 border border-gray-700 px-3 py-1 rounded-full text-xs">
+            ${avatarHtml}
+            <span class="text-white font-bold max-w-[80px] sm:max-w-[120px] truncate">${user.name}</span>
+            <button onclick="handleUserLogout()" class="text-gray-400 hover:text-red-400 ml-1" title="লগআউট">
+              <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+          </div>
+        `;
+      } else {
+        profileArea.innerHTML = `
+          <button onclick="openAuthModal('login')" class="bg-gray-800 hover:bg-gray-700 text-white text-xs px-3 py-1.5 rounded-full border border-gray-700 font-semibold transition">
+            লগইন
+          </button>
+          <button onclick="openAuthModal('signup')" class="bg-brand-red hover:bg-brand-darkRed text-white text-xs px-3 py-1.5 rounded-full font-semibold shadow-md transition">
+            সাইন আপ
+          </button>
+        `;
+      }
+    }
+
+    /* MEDIA RENDER & MODAL */
+    function renderMedia(items = mediaList) {
+      const grid = document.getElementById('mediaGrid');
+      grid.innerHTML = '';
+      document.getElementById('totalCount').innerText = mediaList.length;
+
+      const filtered = activeCategory === 'All' 
+        ? items 
+        : items.filter(item => item.category === activeCategory);
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center text-gray-500 py-16">কোনো ফাইল পাওয়া যায়নি।</div>`;
+        return;
+      }
+
+      filtered.forEach(item => {
+        const isVideo = item.type === 'video';
+        grid.innerHTML += `
+          <div class="bg-brand-cardBg hover:bg-brand-cardHover border border-gray-800 rounded-2xl overflow-hidden transition duration-300 flex flex-col justify-between group shadow-xl">
+            <div>
+              <div class="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
+                ${isVideo 
+                  ? `<video src="${item.fileData}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition"></video>
+                     <div class="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                        <i class="fa-solid fa-circle-play text-4xl text-brand-red/90 group-hover:scale-110 transition"></i>
+                     </div>`
+                  : `<img src="${item.fileData}" class="w-full h-full object-cover group-hover:scale-105 transition">`
+                }
+                <span class="absolute top-2 left-2 bg-brand-red text-white text-[9px] px-2 py-0.5 rounded font-bold uppercase">${item.type}</span>
+                <span class="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] px-2 py-0.5 rounded font-mono">${item.size}</span>
+              </div>
+              <div class="p-4">
+                <div class="flex items-center justify-between text-[11px] text-gray-400 mb-1">
+                  <span class="uppercase font-semibold text-brand-red">${item.category}</span>
+                  <div class="flex items-center gap-3">
+                    <span class="flex items-center gap-1 text-emerald-400 font-bold"><i class="fa-regular fa-eye"></i> ${item.views || 0}</span>
+                    <span class="flex items-center gap-1 text-pink-500 font-bold"><i class="fa-solid fa-heart"></i> ${item.likes || 0}</span>
+                  </div>
+                </div>
+                <h3 class="text-sm font-semibold text-white line-clamp-2 leading-snug group-hover:text-brand-red transition">${item.title}</h3>
+              </div>
+            </div>
+            <div class="p-4 pt-0">
+              <button onclick="handleItemClick(${item.id})" class="w-full bg-brand-red hover:bg-brand-darkRed text-white py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-md">
+                <i class="fa-solid ${isVideo ? 'fa-play' : 'fa-image'}"></i> দেখুন / কমেন্ট করুন
+              </button>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function handleItemClick(id) {
+      let data = getData();
+      let item = data.find(i => i.id === id);
+      if(!item) return;
+
+      item.views = (item.views || 0) + 1;
+      saveData(data);
+      mediaList = data;
+      renderMedia();
+
+      currentActiveItem = item;
+
+      if(item.adLink && item.adLink.trim() !== "") {
+        window.open(item.adLink, '_blank');
+      }
+
+      openModal(item);
+    }
+
+    function openModal(item) {
+      document.getElementById('modalTitle').innerText = item.title;
+      document.getElementById('modalSize').innerText = item.size;
+      document.getElementById('modalViews').innerText = (item.views || 0) + " Views";
+      document.getElementById('likeCountText').innerText = (item.likes || 0) + " Likes";
+
+      const videoPlayer = document.getElementById('modalVideoPlayer');
+      const imgPlayer = document.getElementById('modalImgPlayer');
+
+      if(item.type === 'video') {
+        videoPlayer.src = item.fileData;
+        videoPlayer.classList.remove('hidden');
+        imgPlayer.classList.add('hidden');
+      } else {
+        imgPlayer.src = item.fileData;
+        imgPlayer.classList.remove('hidden');
+        videoPlayer.classList.add('hidden');
+      }
+
+      renderCommentInputUI();
+      renderComments();
+      document.getElementById('mediaModal').classList.remove('hidden');
+    }
+
+    function toggleLike() {
+      const user = getCurrentUser();
+      if(!user) {
+        alert('লাইক করার জন্য আপনাকে প্রথমে লগইন করতে হবে!');
+        openAuthModal('login');
+        return;
+      }
+
+      if(!currentActiveItem) return;
+      let data = getData();
+      let item = data.find(i => i.id === currentActiveItem.id);
+      
+      if(item) {
+        item.likes = (item.likes || 0) + 1;
+        saveData(data);
+        currentActiveItem = item;
+        document.getElementById('likeCountText').innerText = item.likes + " Likes";
+        renderMedia();
+      }
+    }
+
+    function renderCommentInputUI() {
+      const user = getCurrentUser();
+      const container = document.getElementById('commentInputBox');
+
+      if(user) {
+        container.innerHTML = `
+          <form onsubmit="handleCommentSubmit(event)" class="flex gap-2">
+            <input type="text" id="commentText" required placeholder="${user.name} নামে কমেন্ট লিখুন..." 
+                   class="flex-1 bg-black/50 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-red">
+            <button type="submit" class="bg-brand-red hover:bg-brand-darkRed text-white px-4 py-2 rounded-xl text-xs font-bold transition">
+              পাঠান
+            </button>
+          </form>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="bg-black/30 border border-gray-800 p-3 rounded-xl text-center">
+            <p class="text-xs text-gray-400">কমেন্ট করতে অনুগ্রহ করে <button onclick="openAuthModal('login')" class="text-brand-red font-bold underline">লগইন করুন</button></p>
+          </div>
+        `;
+      }
+    }
+
+    function handleCommentSubmit(e) {
+      e.preventDefault();
+      const user = getCurrentUser();
+      if(!user || !currentActiveItem) return;
+
+      const textInput = document.getElementById('commentText');
+      const text = textInput.value.trim();
+
+      if(!text) return;
+
+      let data = getData();
+      let item = data.find(i => i.id === currentActiveItem.id);
+
+      if(item) {
+        if(!item.comments) item.comments = [];
+        item.comments.unshift({
+          name: user.name,
+          avatar: user.avatar || '',
+          text: text,
+          date: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        });
+
+        saveData(data);
+        currentActiveItem = item;
+        textInput.value = '';
+        renderComments();
+      }
+    }
+
+    function renderComments() {
+      const container = document.getElementById('commentsList');
+      const comments = currentActiveItem.comments || [];
+      document.getElementById('commentCount').innerText = comments.length;
+
+      if(comments.length === 0) {
+        container.innerHTML = `<p class="text-xs text-gray-500 text-center py-2">এখনো কোনো কমেন্ট নেই। প্রথম কমেন্ট করুন!</p>`;
+        return;
+      }
+
+      container.innerHTML = comments.map(c => {
+        const avatarHtml = c.avatar 
+          ? `<img src="${c.avatar}" class="w-6 h-6 rounded-full object-cover border border-brand-red">` 
+          : `<div class="w-6 h-6 rounded-full bg-brand-red text-white flex items-center justify-center text-[10px] font-bold">${c.name.charAt(0).toUpperCase()}</div>`;
+
+        return `
+          <div class="bg-black/40 border border-gray-800 p-2.5 rounded-xl text-xs space-y-1">
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-2">
+                ${avatarHtml}
+                <span class="font-bold text-brand-red">${c.name}</span>
+              </div>
+              <span class="text-[10px] text-gray-500">${c.date}</span>
+            </div>
+            <p class="text-gray-300 leading-relaxed pl-8">${c.text}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function triggerDownloadWithAd() {
+      if(!currentActiveItem) return;
+
+      if(currentActiveItem.adLink && currentActiveItem.adLink.trim() !== "") {
+        window.open(currentActiveItem.adLink, '_blank');
+      }
+
+      const a = document.createElement('a');
+      a.href = currentActiveItem.fileData;
+      a.download = currentActiveItem.title;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function closeModal() {
+      const videoPlayer = document.getElementById('modalVideoPlayer');
+      videoPlayer.pause();
+      videoPlayer.src = '';
+      document.getElementById('mediaModal').classList.add('hidden');
+    }
+
+    function filterCategory(cat) {
+      activeCategory = cat;
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.className = btn.innerText.includes(cat)
+          ? 'cat-btn bg-brand-red text-white px-4 py-1.5 rounded-full whitespace-nowrap'
+          : 'cat-btn bg-brand-cardBg hover:bg-gray-800 text-gray-300 px-4 py-1.5 rounded-full whitespace-nowrap';
+      });
+      renderMedia();
+    }
+
+    function handleSearch() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      renderMedia(mediaList.filter(i => i.title.toLowerCase().includes(q)));
+    }
+  </script>
+</body>
+</html>
